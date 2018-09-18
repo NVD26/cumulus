@@ -28,15 +28,18 @@ const {
  */
 async function callCumulusApi({ prefix, functionName, payload: userPayload }) {
   const payload = cloneDeep(userPayload);
+  const customAuth = payload.headers.Authorization;
 
-  process.env.UsersTable = `${prefix}-UsersTable`;
-  const userModel = new User();
+  if (!customAuth) {
+    process.env.UsersTable = `${prefix}-UsersTable`;
+    const userModel = new User();
 
-  const { userName, password } = await userModel.create(fakeUserFactory());
+    const { userName, password } = await userModel.create(fakeUserFactory());
 
-  // Add authorization header to the request
-  payload.headers = payload.headers || {};
-  payload.headers.Authorization = `Bearer ${password}`;
+    // Add authorization header to the request
+    payload.headers = payload.headers || {};
+    payload.headers.Authorization = `Bearer ${password}`;
+  }
 
   let apiOutput;
   try {
@@ -47,7 +50,7 @@ async function callCumulusApi({ prefix, functionName, payload: userPayload }) {
   }
   finally {
     // Delete the user created for this request
-    await userModel.delete(userName);
+    if (!customAuth) await userModel.delete(userName);
   }
 
   return JSON.parse(apiOutput.Payload);
@@ -240,9 +243,13 @@ async function getExecutionLogs({ prefix, executionName }) {
  * @param {Object} params - params
  * @param {string} params.prefix - the prefix configured for the stack
  * @param {string} params.arn - an execution arn
+ * @param {Object} params.headers - an optional headers object to be
+ * used in a request to Cumulus API. If not provided, authorization will
+ * be taken care of for you. This can be used to inject auth values
+ * into the API call.
  * @returns {Promise<Object>} - the execution status fetched by the API
  */
-async function getExecutionStatus({ prefix, arn }) {
+async function getExecutionStatus({ prefix, arn, headers }) {
   const payload = await callCumulusApi({
     prefix: prefix,
     functionName: 'ApiExecutionStatusDefault',
@@ -252,7 +259,8 @@ async function getExecutionStatus({ prefix, arn }) {
       path: `executions/status/${arn}`,
       pathParameters: {
         arn: arn
-      }
+      },
+      headers: headers
     }
   });
 

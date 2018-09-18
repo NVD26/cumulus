@@ -54,6 +54,30 @@ describe('The Cumulus API ExecutionStatus tests. The Ingest workflow', () => {
     expect(workflowExecution.status).toEqual('SUCCEEDED');
   });
 
+  fdescribe('When attempting to access a workflow execution via the API with no session info', () => {
+    let executionStatus;
+    const executionArn = workflowExecution.executionArn;
+
+    executionStatus = await apiTestUtils.getExecutionStatus({
+      prefix: config.stackName,
+      arn: executionArn,
+      headers: { Authorization: 'Bearer fakePassword' }
+    });
+
+    it('returns an HTTP 401 status code', async () => {
+      console.log(executionStatus);
+    });
+
+    it('returns no system information', async () => {
+      console.log(executionStatus);
+    });
+  });
+
+  describe('When performing POST, PUT, or DELETE via the API with no session info', () => {
+    it('rejects the operation', () => {
+    });
+  });
+
   describe('When accessing a workflow execution via the API', () => {
     let executionStatus;
 
