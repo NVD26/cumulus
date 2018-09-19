@@ -247,9 +247,11 @@ async function getExecutionLogs({ prefix, executionName }) {
  * used in a request to Cumulus API. If not provided, authorization will
  * be taken care of for you. This can be used to inject auth values
  * into the API call.
+ * @param {Boolean} params.returnFullResponse - Returns the full response
+ * from the Cumulus API if true, otherwise just returns the body.
  * @returns {Promise<Object>} - the execution status fetched by the API
  */
-async function getExecutionStatus({ prefix, arn, headers }) {
+async function getExecutionStatus({ prefix, arn, headers, returnFullResponse }) {
   const payload = await callCumulusApi({
     prefix: prefix,
     functionName: 'ApiExecutionStatusDefault',
@@ -264,7 +266,7 @@ async function getExecutionStatus({ prefix, arn, headers }) {
     }
   });
 
-  return JSON.parse(payload.body);
+  return returnFullPayload ? JSON.parse(payload) : JSON.parse(payload.body);
 }
 
 module.exports = {
