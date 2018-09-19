@@ -84,7 +84,6 @@ rm "${DEPLOYMENT}.lock"
 
 set +e
 (
-  set -e
   cd example
   if [ "$USE_NPM_PACKAGES" = "true" ]; then
     yarn
@@ -92,23 +91,47 @@ set +e
     (cd .. && ./bin/prepare)
   fi
 
+  if [ $? -ne 0 ]
+  then
+      echo "Failed to prepare repository" >&2
+      exit 1
+  else
+
   ./node_modules/.bin/kes cf deploy \
     --kes-folder iam \
     --region us-east-1 \
     --deployment "$DEPLOYMENT" \
     --template node_modules/@cumulus/deployment/iam
 
+  if [ $? -ne 0 ]
+  then
+      echo "Failed to deploy iam stack" >&2
+      exit 1
+  else
+
   ./node_modules/.bin/kes cf deploy \
     --kes-folder app \
     --region us-east-1 \
     --deployment "$DEPLOYMENT" \
     --template node_modules/@cumulus/deployment/app
 
+  if [ $? -ne 0 ]
+  then
+      echo "Failed to deploy app stack" >&2
+      exit 1
+  else
+
   ./node_modules/.bin/kes lambda S3AccessTest deploy \
     --kes-folder app \
     --region us-west-1 \
     --deployment "$DEPLOYMENT" \
     --template node_modules/@cumulus/deployment/app
+
+  if [ $? -ne 0 ]
+  then
+      echo "Failed to deploy s3AccessTest to us-west-1" >&2
+      exit 1
+  else
 
   yarn test
 )
